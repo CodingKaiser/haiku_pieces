@@ -1,7 +1,9 @@
 import pathlib
-from typing import List, Tuple
+from typing import List, Tuple, Hashable, Iterable
 
 import numpy as np
+import pandas as pd
+from pandas import Series
 from pydantic import BaseModel
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
@@ -56,7 +58,7 @@ def grid_on_page(width: float, height: float, page_dim: Tuple[float, float]):
     return rows, cols
 
 
-def generate_haiku_puzzles(haikus: List[List[str]], output_file: pathlib.Path, conf: HaikuPuzzleConfig):
+def generate_haiku_puzzles(haikus: Iterable[Tuple[Hashable, Series]], output_file: pathlib.Path, conf: HaikuPuzzleConfig):
     # Calculate number of rows and cols per page
     rows, cols = grid_on_page(width=(conf.obj_width * 3 + conf.obj_paddingX * 2),
                               height=(conf.obj_height + conf.obj_paddingY),
@@ -68,7 +70,8 @@ def generate_haiku_puzzles(haikus: List[List[str]], output_file: pathlib.Path, c
     # Get base format of heart
     heart_x, heart_y = get_heart_coords()
 
-    for index, haiku in enumerate(haikus):
+    for index, haiku in haikus:
+
         # Calculate grid position on page
         col = (index * 3) % cols
         row = ((index * 3) % (rows * cols)) // cols
@@ -122,10 +125,8 @@ def generate_haiku_puzzles(haikus: List[List[str]], output_file: pathlib.Path, c
 if __name__ == '__main__':
     c = HaikuPuzzleConfig()
 
-    haikus = [
-        ["An old silent pond", "A frog jumps into the pond—", "Splash! Silence again."],
-        ["Autumn moonlight—", "a worm digs silently", "into the chestnut."]
-    ]
+    df = pd.read_csv('haikus_input.csv', delimiter=';')
+    haikus = df.iterrows()
 
     output_file = pathlib.Path('./haiku_puzzles').with_suffix('.pdf')
 

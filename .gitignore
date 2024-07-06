@@ -164,3 +164,4 @@ cython_debug/
 # Project-specific
 *.jpg
 *.pdf
+.DS_Store
