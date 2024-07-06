@@ -22,14 +22,14 @@ class HaikuPuzzleConfig(BaseModel):
     obj_height: float = 2.5 * cm  # Reduced height
 
     # Width between two objects
-    obj_paddingX: float = 0.5 * cm
+    obj_paddingX: float = 1.0 * cm  # Space to fit half of the heart shape
     obj_paddingY: float = 0.2 * cm
 
     page_dim: Tuple[float, float] = landscape(A4)
 
     font_path: str = './QuicksandBold700.ttf'
     font_name: str = 'Quicksand Bold'
-    font_size: int = 16  # Reduced font size
+    font_size: int = 12  # Reduced font size
 
 
 def get_heart_coords():
@@ -71,7 +71,6 @@ def generate_haiku_puzzles(haikus: Iterable[Tuple[Hashable, Series]], output_fil
     heart_x, heart_y = get_heart_coords()
 
     for index, haiku in haikus:
-
         # Calculate grid position on page
         col = (index * 3) % cols
         row = ((index * 3) % (rows * cols)) // cols
@@ -95,7 +94,7 @@ def generate_haiku_puzzles(haikus: Iterable[Tuple[Hashable, Series]], output_fil
                 # Draw heart
                 heart_center_x = x1 - conf.obj_paddingX / 2
                 heart_center_y = y0 + conf.obj_height / 2
-                heart_scale_x = conf.obj_paddingX / 2
+                heart_scale_x = conf.obj_paddingX
                 heart_scale_y = conf.obj_height / 2
 
                 heart_coords = [(heart_center_x + heart_scale_x * hx, heart_center_y + heart_scale_y * hy) for hx, hy in zip(heart_x, heart_y)]
