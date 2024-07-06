@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     c = NameTagConfig()
 
-    df = pd.read_csv('private/guestlist.csv', delimiter=';')
+    df = pd.read_csv('guestlist.csv', delimiter=';')
     df = df.loc[:, ['Nachname', 'Vorname']]
 
     output_file = pathlib.Path('./test').with_suffix('.pdf')
