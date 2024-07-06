@@ -22,14 +22,14 @@ class HaikuPuzzleConfig(BaseModel):
     obj_height: float = 2.5 * cm  # Reduced height
 
     # Width between two objects
-    obj_paddingX: float = 1.0 * cm  # Space to fit half of the heart shape
+    obj_paddingX: float = 0.0 * cm  # Removed padding to make hearts overlap
     obj_paddingY: float = 0.2 * cm
 
     page_dim: Tuple[float, float] = landscape(A4)
 
     font_path: str = './QuicksandBold700.ttf'
     font_name: str = 'Quicksand Bold'
-    font_size: int = 12  # Reduced font size
+    font_size: int = 10  # Reduced font size
 
 
 def get_heart_coords():
@@ -44,6 +44,9 @@ def get_heart_coords():
     # Scale to width of 1
     x *= 1 / max(x)
     y *= 1 / max(y)
+
+    # Rotate 90 degrees to the left (clockwise)
+    x, y = y, -x
 
     return x, y
 
@@ -60,7 +63,7 @@ def grid_on_page(width: float, height: float, page_dim: Tuple[float, float]):
 
 def generate_haiku_puzzles(haikus: Iterable[Tuple[Hashable, Series]], output_file: pathlib.Path, conf: HaikuPuzzleConfig):
     # Calculate number of rows and cols per page
-    rows, cols = grid_on_page(width=(conf.obj_width * 3 + conf.obj_paddingX * 2),
+    rows, cols = grid_on_page(width=(conf.obj_width * 3),
                               height=(conf.obj_height + conf.obj_paddingY),
                               page_dim=conf.page_dim)
 
@@ -79,12 +82,12 @@ def generate_haiku_puzzles(haikus: Iterable[Tuple[Hashable, Series]], output_fil
             col = 0
             row += 1
 
-        offsetX = conf.page_paddingX + (conf.obj_width * 3 + conf.obj_paddingX * 2) * col
+        offsetX = conf.page_paddingX + (conf.obj_width * 3) * col
         offsetY = conf.page_paddingY + (conf.obj_height + conf.obj_paddingY) * row
 
         # Draw three rectangles with connecting hearts
         for i in range(3):
-            x0 = offsetX + (conf.obj_width + conf.obj_paddingX) * i
+            x0 = offsetX + conf.obj_width * i
             y0 = offsetY
             x1 = x0 + conf.obj_width
             y1 = y0 + conf.obj_height
@@ -92,9 +95,9 @@ def generate_haiku_puzzles(haikus: Iterable[Tuple[Hashable, Series]], output_fil
 
             if i < 2:
                 # Draw heart
-                heart_center_x = x1 - conf.obj_paddingX / 2
-                heart_center_y = y0 + conf.obj_height / 2
-                heart_scale_x = conf.obj_paddingX
+                heart_center_x = x1 - 30
+                heart_center_y = y0 + 15 + conf.obj_height / 2
+                heart_scale_x = conf.obj_width / 4
                 heart_scale_y = conf.obj_height / 2
 
                 heart_coords = [(heart_center_x + heart_scale_x * hx, heart_center_y + heart_scale_y * hy) for hx, hy in zip(heart_x, heart_y)]
@@ -107,7 +110,7 @@ def generate_haiku_puzzles(haikus: Iterable[Tuple[Hashable, Series]], output_fil
 
         # Draw haiku lines
         for i, line in enumerate(haiku):
-            x = offsetX + (conf.obj_width + conf.obj_paddingX) * i + conf.obj_width / 2
+            x = offsetX + conf.obj_width * i + conf.obj_width / 2
             y = offsetY + conf.obj_height / 2
             text_width = pdfmetrics.stringWidth(line, conf.font_name, conf.font_size)
             can.drawString(x - text_width / 2, y - conf.font_size / 2, line)
