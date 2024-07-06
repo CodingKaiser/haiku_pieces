@@ -66,7 +66,7 @@ def generate_haiku_puzzles(haikus: List[List[str]], output_file: pathlib.Path, c
     can.setStrokeColor(black)
 
     # Get base format of heart
-    x, y = get_heart_coords()
+    heart_x, heart_y = get_heart_coords()
 
     for index, haiku in enumerate(haikus):
         # Calculate grid position on page
@@ -90,11 +90,13 @@ def generate_haiku_puzzles(haikus: List[List[str]], output_file: pathlib.Path, c
 
             if i < 2:
                 # Draw heart
-                heart_x = x * (conf.obj_paddingX / 2) + x1 - conf.obj_paddingX / 2
-                heart_y = y * (conf.obj_paddingY / 2) + y0 + conf.obj_height / 2
+                heart_center_x = x1 - conf.obj_paddingX / 2
+                heart_center_y = y0 + conf.obj_height / 2
+                heart_scale_x = conf.obj_paddingX / 2
+                heart_scale_y = conf.obj_height / 2
 
-                # Convert coordinates into a tuples with (x1, y1, x2, y2), ...
-                linelist = [(heart_x[j], heart_y[j], heart_x[j + 1], heart_y[j + 1]) for j in range(len(x) - 1)]
+                heart_coords = [(heart_center_x + heart_scale_x * hx, heart_center_y + heart_scale_y * hy) for hx, hy in zip(heart_x, heart_y)]
+                linelist = [(heart_coords[j][0], heart_coords[j][1], heart_coords[j + 1][0], heart_coords[j + 1][1]) for j in range(len(heart_coords) - 1)]
 
                 can.lines(linelist)
 
