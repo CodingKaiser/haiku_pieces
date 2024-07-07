@@ -1,54 +1,87 @@
 import pathlib
-from typing import Tuple, Hashable, Iterable
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
-from pandas import Series
 from pydantic import BaseModel
+
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
-from reportlab.lib.colors import red, black
+from reportlab.lib.colors import red, blue, black
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 
-class HaikuPuzzleConfig(BaseModel):
+class HaikuTagConfig(BaseModel):
     page_paddingX: float = 1 * cm
     page_paddingY: float = 0.8 * cm
 
     # Width of object itself
-    obj_width: float = 7.0 * cm  # Increased width to fit the text
-    obj_height: float = 2.5 * cm  # Reduced height
+    obj_width: float = 6 * cm
+    obj_height: float = 6 * cm
 
     # Width between two objects
-    obj_paddingX: float = 0.0 * cm  # Removed padding to make hearts overlap
+    obj_paddingX: float = 0.5 * cm
     obj_paddingY: float = 0.2 * cm
 
     page_dim: Tuple[float, float] = landscape(A4)
 
     font_path: str = './QuicksandBold700.ttf'
     font_name: str = 'Quicksand Bold'
-    font_size: int = 10  # Reduced font size
+    font_size: int = 20
 
 
-def get_heart_coords():
-    t = np.linspace(0, 2 * np.pi, 1000)
-    x = 16 * np.sin(t) ** 3
-    y = 13 * np.cos(t) - 5 * np.cos(2 * t) - 2 * np.cos(3 * t) - np.cos(4 * t)
+def draw_puzzle_piece(c, x, y, size):
+    corner_radius = size * 0.1  # Adjust this for the desired roundness of the corners
 
-    # Move origin to lower left corner
-    x -= min(x)
-    y -= min(y)
+    # Coordinates for the puzzle piece
+    path = c.beginPath()
+    path.moveTo(x + corner_radius, y)  # Starting point
+    path.lineTo(x + size - corner_radius, y)
+    path.arc(x + size - 2 * corner_radius, y - 2 * corner_radius, x + size, y, startAng=90, extent=-90)
+    path.lineTo(x + size,
+                y - size + corner_radius)
+    path.arc(x + size,
+             y - size + 2 * corner_radius,
+             x + size - 2 * corner_radius,
+             y - size, startAng=0, extent=-90)
+    path.lineTo(x + corner_radius, y - size)
+    path.arc(x,
+             y - size,
+             x + 2 * corner_radius,
+             y - size + 2 * corner_radius,
+             startAng=-90,
+             extent=-90)
+    path.lineTo(x, y - corner_radius)
+    path.arc(x,
+             y,
+             x + 2 * corner_radius,
+             y - 2 * corner_radius,
+             startAng=180,
+             extent=-90)
+    # now we move to draw the inside of the puzzle, so we move to the middle the top side of the piece
+    path.moveTo(x + 0.5 * size, y)
+    path.lineTo(x + 0.5 * size, y - size * 0.25)
+    # now draw a jigsaw type connection using path.arc
+    path.arc(x + size * 0.474, y - size * 0.242, x + size * 0.58, y - size * 0.36, startAng=120, extent=-240)
+    # now move to the middle of the inside of the piece
+    path.lineTo(x + 0.5 * size, y - size * 0.5)
+    # now move to the middle right half of the piece
+    path.moveTo(x + size, y - size * 0.5)
+    path.lineTo(x + size * 0.8, y - size * 0.5)
+    path.arc(x + size * 0.81, y - size * 0.474, x + size * 0.69, y - size * 0.58, startAng=30, extent=-240)
+    path.lineTo(x + 0.5 * size, y - size * 0.5)
+    path.moveTo(x + 0.5 * size, y - size)
+    path.lineTo(x + 0.5 * size, y - size * 0.8)
+    path.arc(x + size * 0.529, y - size * 0.81, x + size * 0.42, y - size * 0.69, startAng=300, extent=-240)
+    path.lineTo(x + 0.5 * size, y - size * 0.5)
+    path.moveTo(x, y - 0.5 * size)
+    path.lineTo(x + size * 0.18, y - 0.5 * size)
+    path.arc(x + size * 0.17, y - size * 0.529, x + size * 0.30, y - size * 0.42, startAng=210, extent=-240)
+    path.lineTo(x + 0.5 * size, y - size * 0.5)
 
-    # Scale to width of 1
-    x *= 1 / max(x)
-    y *= 1 / max(y)
-
-    # Rotate 90 degrees to the left (clockwise)
-    x, y = -y, x
-
-    return x, y
+    c.drawPath(path, stroke=1, fill=0)
 
 
 def grid_on_page(width: float, height: float, page_dim: Tuple[float, float]):
@@ -61,75 +94,63 @@ def grid_on_page(width: float, height: float, page_dim: Tuple[float, float]):
     return rows, cols
 
 
-def generate_haiku_puzzles(haikus: Iterable[Tuple[Hashable, Series]], output_file: pathlib.Path, conf: HaikuPuzzleConfig):
+def generate_haiku_tags(df: pd.DataFrame, output_file: pathlib.Path, conf: HaikuTagConfig):
+
     # Calculate number of rows and cols per page
-    rows, cols = grid_on_page(width=(conf.obj_width * 3),
+    rows, cols = grid_on_page(width=(conf.obj_width + conf.obj_paddingX),
                               height=(conf.obj_height + conf.obj_paddingY),
                               page_dim=conf.page_dim)
 
     can = canvas.Canvas(str(output_file.absolute()), pagesize=conf.page_dim)
     can.setStrokeColor(black)
 
-    # Get base format of heart
-    heart_x, heart_y = get_heart_coords()
+    for index, row in df.iterrows():
+        haiku_line1, haiku_line2, haiku_line3 = row
 
-    for index, haiku in haikus:
         # Calculate grid position on page
-        col = (index * 3) % cols
-        row = ((index * 3) % (rows * cols)) // cols
+        col = index % cols
+        row_num = (index % (rows * cols)) // cols
 
-        if col + 3 > cols:
-            col = 0
-            row += 1
-
-        offsetX = conf.page_paddingX + (conf.obj_width * 3) * col
-        offsetY = conf.page_paddingY + (conf.obj_height + conf.obj_paddingY) * row
-
-        # Draw three rectangles with connecting hearts
-        for i in range(3):
-            x0 = offsetX + conf.obj_width * i
-            y0 = offsetY
-            x1 = x0 + conf.obj_width
-            y1 = y0 + conf.obj_height
-            can.rect(x0, y0, conf.obj_width, conf.obj_height)
-
-            if i < 2:
-                # Draw heart
-                heart_center_x = x1 + 20
-                heart_center_y = y0 - 17 + conf.obj_height / 2
-                heart_scale_x = conf.obj_width / 5
-                heart_scale_y = conf.obj_height / 2
-
-                heart_coords = [(heart_center_x + heart_scale_x * hx, heart_center_y + heart_scale_y * hy) for hx, hy in zip(heart_x, heart_y)]
-                linelist = [(heart_coords[j][0], heart_coords[j][1], heart_coords[j + 1][0], heart_coords[j + 1][1]) for j in range(len(heart_coords) - 1)]
-
-                can.lines(linelist)
+        print(f'Index: {index}, row: {row_num}, col: {col}')
 
         pdfmetrics.registerFont(TTFont(conf.font_name, conf.font_path))
+
+        offsetX = conf.page_paddingX + (conf.obj_width + conf.obj_paddingX) * col
+        offsetY = conf.page_paddingY + (conf.obj_height + conf.obj_paddingY) * row_num
+
+        # Draw jigsaw puzzle piece
+        draw_puzzle_piece(can, offsetX, offsetY + conf.obj_height, min(conf.obj_width, conf.obj_height))
+
+        # Configure font
         can.setFont(conf.font_name, conf.font_size)
 
-        # Draw haiku lines
-        for i, line in enumerate(haiku):
-            x = offsetX + conf.obj_width * i + conf.obj_width / 2
-            y = offsetY + conf.obj_height / 2
-            text_width = pdfmetrics.stringWidth(line, conf.font_name, conf.font_size)
-            can.drawString(x - text_width / 2, y - conf.font_size / 2, line)
+        # Calculate width of text
+        text_width1 = pdfmetrics.stringWidth(haiku_line1, conf.font_name, conf.font_size)
+        text_width2 = pdfmetrics.stringWidth(haiku_line2, conf.font_name, conf.font_size)
+        text_width3 = pdfmetrics.stringWidth(haiku_line3, conf.font_name, conf.font_size)
 
-        if (index + 1) % (rows * cols // 3) == 0:
+        # Add text horizontally centered
+        can.drawString((offsetX + conf.obj_width / 2) - text_width1 / 2, (offsetY + 2.5 * cm),
+                       haiku_line1)
+        can.drawString((offsetX + conf.obj_width / 2) - text_width2 / 2, (offsetY + 2.0 * cm),
+                       haiku_line2)
+        can.drawString((offsetX + conf.obj_width / 2) - text_width3 / 2, (offsetY + 1.5 * cm),
+                       haiku_line3)
+
+        if index > 0 and (index + 1) % (cols * rows) == 0:
+            print('Next page')
             can.showPage()
             can.setStrokeColor(black)
 
     can.save()
-    print(f'Processed {index + 1} haikus')
+    print(f'Processed {index} elements')
     return index + 1
 
 
 if __name__ == '__main__':
-    c = HaikuPuzzleConfig()
+    c = HaikuTagConfig()
 
     df = pd.read_csv('haikus_input.csv', delimiter=';')
-    haikus = df.iterrows()
+    output_file = pathlib.Path('./haiku_tags').with_suffix('.pdf')
 
-    output_file = pathlib.Path('./haiku_puzzles').with_suffix('.pdf')
-
-    generate_haiku_puzzles(haikus, output_file=output_file, conf=c)
+    generate_haiku_tags(df, output_file=output_file, conf=c)
