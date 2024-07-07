@@ -53,13 +53,19 @@ def draw_puzzle_piece(c, x, y, size):
     # path.arc(x + size * 0.474, y - size * 0.242, x + size * 0.58, y - size * 0.36, startAng=120, extent=-240)
     path.arc(x + size * 0.81, y - size * 0.474, x + size * 0.69, y - size * 0.58, startAng=30, extent=-240)
     path.lineTo(x + 0.5 * size, y - size * 0.5)
+    path.moveTo(x + 0.5 * size, y - size)
+    path.lineTo(x + 0.5 * size, y - size * 0.8)
+    # Take the following line of code and flip it 90 degrees clockwise making sure to adjust the x and y coordinates accord to the last lineTo
+    # path.arc(x + size * 0.81, y - size * 0.474, x + size * 0.69, y - size * 0.58, startAng=30, extent=-240)
+    path.arc(x + size * 0.529, y - size * 0.81, x + size * 0.42, y - size * 0.69, startAng=300, extent=-240)
+    path.lineTo(x + 0.5 * size, y - size * 0.5)
 
-
-    #path.arc(x + size * 0.58, y - size * 0.36, x + size * 0.474, y - size * 0.242, startAng=30, extent=-240)
-
-
-    #path.curveTo(x + 0.5 * size, y - size * 0.25, x + size * 0.55, y - size * 0.25, x + size * 0.55, y - size * 0.3)
-    #path.curveTo(x + 0.5 * size, y - size * 0.25, x + size * 0.45, y - size * 0.25, x + size * 0.45, y - size * 0.3)
+    path.moveTo(x, y - 0.5 * size)
+    path.lineTo(x + size * 0.18, y - 0.5 * size)
+    # Take the following line of code and flip it 90 degrees clockwise making sure to adjust the x and y coordinates accord to the last lineTo
+    # path.arc(x + size * 0.529, y - size * 0.81, x + size * 0.42, y - size * 0.69, startAng=300, extent=-240)
+    path.arc(x + size * 0.17, y - size * 0.529, x + size * 0.30, y - size * 0.42, startAng=210, extent=-240)
+    path.lineTo(x + 0.5 * size, y - size * 0.5)
 
     c.drawPath(path, stroke=1, fill=0)
 

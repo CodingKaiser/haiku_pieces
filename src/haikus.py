@@ -1,5 +1,5 @@
 import pathlib
-from typing import List, Tuple, Hashable, Iterable
+from typing import Tuple, Hashable, Iterable
 
 import numpy as np
 import pandas as pd
@@ -46,7 +46,7 @@ def get_heart_coords():
     y *= 1 / max(y)
 
     # Rotate 90 degrees to the left (clockwise)
-    x, y = y, -x
+    x, y = -y, x
 
     return x, y
 
@@ -95,9 +95,9 @@ def generate_haiku_puzzles(haikus: Iterable[Tuple[Hashable, Series]], output_fil
 
             if i < 2:
                 # Draw heart
-                heart_center_x = x1 - 30
-                heart_center_y = y0 + 15 + conf.obj_height / 2
-                heart_scale_x = conf.obj_width / 4
+                heart_center_x = x1 + 20
+                heart_center_y = y0 - 17 + conf.obj_height / 2
+                heart_scale_x = conf.obj_width / 5
                 heart_scale_y = conf.obj_height / 2
 
                 heart_coords = [(heart_center_x + heart_scale_x * hx, heart_center_y + heart_scale_y * hy) for hx, hy in zip(heart_x, heart_y)]
