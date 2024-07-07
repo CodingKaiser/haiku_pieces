@@ -18,8 +18,8 @@ class HaikuTagConfig(BaseModel):
     page_paddingY: float = 0.8 * cm
 
     # Width of object itself
-    obj_width: float = 6 * cm
-    obj_height: float = 6 * cm
+    obj_width: float = 8 * cm
+    obj_height: float = 8 * cm
 
     # Width between two objects
     obj_paddingX: float = 0.5 * cm
@@ -29,7 +29,7 @@ class HaikuTagConfig(BaseModel):
 
     font_path: str = './QuicksandBold700.ttf'
     font_name: str = 'Quicksand Bold'
-    font_size: int = 20
+    font_size: int = 14
 
 
 def draw_puzzle_piece(c, x, y, size):
@@ -123,19 +123,24 @@ def generate_haiku_tags(df: pd.DataFrame, output_file: pathlib.Path, conf: Haiku
 
         # Configure font
         can.setFont(conf.font_name, conf.font_size)
+        can.setFillColor(blue)
 
         # Calculate width of text
         text_width1 = pdfmetrics.stringWidth(haiku_line1, conf.font_name, conf.font_size)
         text_width2 = pdfmetrics.stringWidth(haiku_line2, conf.font_name, conf.font_size)
         text_width3 = pdfmetrics.stringWidth(haiku_line3, conf.font_name, conf.font_size)
 
-        # Add text horizontally centered
-        can.drawString((offsetX + conf.obj_width / 2) - text_width1 / 2, (offsetY + 2.5 * cm),
+        # Add text horizontally centered with adjusted spacing
+        line_spacing = 2 * cm  # Adjust the line spacing as needed
+        center_y = offsetY - 0.1 * cm + (conf.obj_height / 2)  # Middle of the shape
+
+        can.drawString((offsetX + conf.obj_width / 2) - text_width1 / 2, center_y + line_spacing,
                        haiku_line1)
-        can.drawString((offsetX + conf.obj_width / 2) - text_width2 / 2, (offsetY + 2.0 * cm),
+        can.drawString((offsetX + conf.obj_width / 2) - text_width2 / 2, center_y,
                        haiku_line2)
-        can.drawString((offsetX + conf.obj_width / 2) - text_width3 / 2, (offsetY + 1.5 * cm),
+        can.drawString((offsetX + conf.obj_width / 2) - text_width3 / 2, center_y - line_spacing,
                        haiku_line3)
+
 
         if index > 0 and (index + 1) % (cols * rows) == 0:
             print('Next page')
