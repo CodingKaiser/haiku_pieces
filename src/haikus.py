@@ -18,8 +18,8 @@ class HaikuTagConfig(BaseModel):
     page_paddingY: float = 0.8 * cm
 
     # Width of object itself
-    obj_width: float = 8 * cm
-    obj_height: float = 8 * cm
+    obj_width: float = 9 * cm
+    obj_height: float = 9 * cm
 
     # Width between two objects
     obj_paddingX: float = 0.5 * cm
